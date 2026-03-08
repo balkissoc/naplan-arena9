@@ -41,7 +41,7 @@ const skillsGrid = document.getElementById("skills-grid");
 const floatingRewards = document.getElementById("floating-rewards");
 const screenTransition = document.getElementById("screen-transition");
 
-const STORAGE_KEY = "naplanArenaProfileV5";
+const STORAGE_KEY = "naplanArenaProfileV6";
 const DEFAULT_QUESTIONS_PER_BATTLE = 10;
 const DAILY_QUEST_QUESTIONS = 5;
 
@@ -69,6 +69,8 @@ let currentBattleLabel = "Mixed Battle";
 let currentBattleSource = "mixed";
 let currentSkillCategory = null;
 let soundEnabled = true;
+let streakCount = 0;
+let streakBadge = null;
 
 let player = {
   name: "Jamie",
@@ -151,13 +153,13 @@ function updateSoundUi() {
 }
 
 function animateXpBar() {
-  xpFill.classList.remove("xp-pop");
+  xpFill.classList.remove("xp-pop", "xp-burst");
   void xpFill.offsetWidth;
-  xpFill.classList.add("xp-pop");
+  xpFill.classList.add("xp-pop", "xp-burst");
 
   setTimeout(() => {
-    xpFill.classList.remove("xp-pop");
-  }, 500);
+    xpFill.classList.remove("xp-pop", "xp-burst");
+  }, 550);
 }
 
 function updatePlayerUi(animateXp = false) {
@@ -324,6 +326,11 @@ function playSound(type) {
       createTone(523, 0.08, "triangle", 0.03);
       setTimeout(() => createTone(659, 0.08, "triangle", 0.025), 90);
       setTimeout(() => createTone(784, 0.12, "triangle", 0.025), 180);
+    } else if (type === "levelup") {
+      createTone(523, 0.08, "triangle", 0.035);
+      setTimeout(() => createTone(659, 0.08, "triangle", 0.03), 70);
+      setTimeout(() => createTone(784, 0.08, "triangle", 0.03), 140);
+      setTimeout(() => createTone(1047, 0.14, "triangle", 0.03), 230);
     }
   } catch (error) {
     console.error("Sound playback failed", error);
@@ -341,6 +348,131 @@ function spawnFloatingReward(text, type) {
   setTimeout(() => {
     el.remove();
   }, 1000);
+}
+
+function spawnCoinFly(fromElement, count = 5) {
+  if (!fromElement || !coinCount) return;
+
+  const start = fromElement.getBoundingClientRect();
+  const end = coinCount.getBoundingClientRect();
+
+  for (let i = 0; i < count; i += 1) {
+    const coin = document.createElement("div");
+    coin.className = "coin-fly";
+    coin.style.left = `${start.left + start.width / 2}px`;
+    coin.style.top = `${start.top + start.height / 2}px`;
+    floatingRewards.appendChild(coin);
+
+    const offsetX = (Math.random() - 0.5) * 40;
+    const offsetY = (Math.random() - 0.5) * 30;
+
+    requestAnimationFrame(() => {
+      coin.style.transition = `transform 0.65s ease, opacity 0.65s ease, left 0.65s ease, top 0.65s ease`;
+      coin.style.left = `${end.left + end.width / 2 + offsetX}px`;
+      coin.style.top = `${end.top + end.height / 2 + offsetY}px`;
+      coin.style.opacity = "0.15";
+      coin.style.transform = "scale(0.6)";
+    });
+
+    setTimeout(() => {
+      coin.remove();
+      coinCount.classList.remove("coin-counter-bump");
+      void coinCount.offsetWidth;
+      coinCount.classList.add("coin-counter-bump");
+    }, 680);
+  }
+}
+
+function spawnXpBurst() {
+  if (!xpFill) return;
+
+  const rect = xpFill.getBoundingClientRect();
+
+  for (let i = 0; i < 12; i += 1) {
+    const p = document.createElement("div");
+    p.className = "xp-particle";
+    p.style.left = `${rect.left + rect.width * (0.2 + Math.random() * 0.6)}px`;
+    p.style.top = `${rect.top + rect.height / 2}px`;
+    floatingRewards.appendChild(p);
+
+    const dx = (Math.random() - 0.5) * 90;
+    const dy = -20 - Math.random() * 50;
+
+    requestAnimationFrame(() => {
+      p.style.transition = "transform 0.6s ease, opacity 0.6s ease, left 0.6s ease, top 0.6s ease";
+      p.style.left = `${rect.left + rect.width / 2 + dx}px`;
+      p.style.top = `${rect.top + dy}px`;
+      p.style.opacity = "0";
+      p.style.transform = "scale(0.5)";
+    });
+
+    setTimeout(() => {
+      p.remove();
+    }, 650);
+  }
+}
+
+function ensureStreakBadge() {
+  if (streakBadge || !battleCard) return;
+
+  battleCard.style.position = "relative";
+  streakBadge = document.createElement("div");
+  streakBadge.className = "streak-badge";
+  battleCard.appendChild(streakBadge);
+}
+
+function updateStreakBadge() {
+  ensureStreakBadge();
+
+  if (!streakBadge) return;
+
+  if (streakCount >= 2) {
+    streakBadge.textContent = `🔥 ${streakCount} Streak`;
+    streakBadge.classList.remove("show");
+    void streakBadge.offsetWidth;
+    streakBadge.classList.add("show");
+  } else {
+    streakBadge.classList.remove("show");
+    streakBadge.style.opacity = "0";
+  }
+}
+
+function showLevelUpCelebration(newRank) {
+  const overlay = document.createElement("div");
+  overlay.className = "level-up-overlay show";
+  overlay.innerHTML = `
+    <div class="level-up-card">
+      <div class="level-up-title">LEVEL UP!</div>
+      <div class="level-up-rank">${newRank}</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  playSound("levelup");
+
+  setTimeout(() => {
+    overlay.remove();
+  }, 1250);
+}
+
+function animateQuestionSwap(callback) {
+  if (!battleCard) {
+    callback();
+    return;
+  }
+
+  battleCard.classList.remove("question-in", "question-out");
+  battleCard.classList.add("question-out");
+
+  setTimeout(() => {
+    callback();
+    battleCard.classList.remove("question-out");
+    battleCard.classList.add("question-in");
+
+    setTimeout(() => {
+      battleCard.classList.remove("question-in");
+    }, 300);
+  }, 220);
 }
 
 function showQuestion() {
@@ -365,13 +497,13 @@ function showQuestion() {
     button.addEventListener("click", () => {
       addPressAnimation(button);
       playSound("click");
-      selectAnswer(index);
+      selectAnswer(index, button);
     });
     answerList.appendChild(button);
   });
 }
 
-function selectAnswer(selectedIndex) {
+function selectAnswer(selectedIndex, clickedButton) {
   if (questionAnswered) return;
 
   questionAnswered = true;
@@ -379,6 +511,7 @@ function selectAnswer(selectedIndex) {
   const current = battleQuestions[currentQuestionIndex];
   const buttons = document.querySelectorAll(".answer-button");
   const selectedAnswer = current.answers[selectedIndex];
+  const previousRank = getRankLabel(player.xp);
 
   buttons.forEach((btn, index) => {
     btn.disabled = true;
@@ -396,26 +529,40 @@ function selectAnswer(selectedIndex) {
 
   if (selectedAnswer.correct) {
     score += 1;
+    streakCount += 1;
     battleXpEarned += 25;
     battleCoinsEarned += 20;
     player.xp += 25;
     player.coins += 20;
+
     feedback.textContent = "Correct! +25 XP, +20 coins";
     feedback.className = "feedback correct";
     flashBattleCard("correct");
     playSound("correct");
     spawnFloatingReward("+25 XP", "xp");
     spawnFloatingReward("+20 Coins", "coins");
+    spawnCoinFly(clickedButton, 5);
+    spawnXpBurst();
     updatePlayerUi(true);
+    updateStreakBadge();
+
+    const newRank = getRankLabel(player.xp);
+    if (newRank !== previousRank) {
+      showLevelUpCelebration(newRank);
+    }
   } else {
+    streakCount = 0;
     battleCoinsEarned += 5;
     player.coins += 5;
+
     feedback.textContent = `Not quite. ${current.explanation}`;
     feedback.className = "feedback wrong";
     flashBattleCard("wrong");
     playSound("wrong");
     spawnFloatingReward("+5 Coins", "coins");
+    spawnCoinFly(clickedButton, 2);
     updatePlayerUi(false);
+    updateStreakBadge();
   }
 
   saveProfile();
@@ -460,10 +607,12 @@ function startBattleWithQuestions(questions, label, source) {
   battleQuestions = questions;
   currentQuestionIndex = 0;
   score = 0;
+  streakCount = 0;
   battleXpEarned = 0;
   battleCoinsEarned = 0;
   currentBattleLabel = label;
   currentBattleSource = source;
+  updateStreakBadge();
 
   showScreen(battleScreen);
   showQuestion();
@@ -593,7 +742,7 @@ nextBtn.addEventListener("click", () => {
   currentQuestionIndex += 1;
 
   if (currentQuestionIndex < battleQuestions.length) {
-    showQuestion();
+    animateQuestionSwap(showQuestion);
   } else {
     showResults();
   }
@@ -641,3 +790,4 @@ updatePlayerUi();
 showScreen(menuScreen);
 saveProfile();
 attachPressAnimations();
+ensureStreakBadge();
