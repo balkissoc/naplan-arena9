@@ -454,3 +454,119 @@ button {
     margin-right: 0;
   }
 }
+/* --- Game polish: animations and effects --- */
+
+.menu-button,
+.answer-button {
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.2s ease,
+    outline-color 0.2s ease;
+}
+
+.menu-button.pressed,
+.answer-button.pressed {
+  transform: translateY(3px) scale(0.98);
+  filter: brightness(0.96);
+}
+
+.answer-button.correct-answer {
+  animation: correctPulse 0.45s ease;
+  background: #dfffe8;
+}
+
+.answer-button.wrong-answer {
+  animation: wrongShake 0.35s ease;
+  background: #ffe1e6;
+}
+
+.battle-card.flash-correct {
+  animation: flashCorrect 0.45s ease;
+}
+
+.battle-card.flash-wrong {
+  animation: flashWrong 0.45s ease;
+}
+
+#xp-fill {
+  transition: width 0.6s ease-in-out, box-shadow 0.3s ease;
+}
+
+#xp-fill.xp-pop {
+  box-shadow: 0 0 18px rgba(121, 231, 255, 0.95);
+}
+
+.feedback.correct {
+  animation: feedbackPop 0.35s ease;
+}
+
+.feedback.wrong {
+  animation: feedbackPop 0.35s ease;
+}
+
+@keyframes correctPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes wrongShake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes flashCorrect {
+  0% {
+    box-shadow: 0 0 0 rgba(125, 255, 155, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(125, 255, 155, 0.55);
+  }
+  100% {
+    box-shadow: var(--shadow-deep), var(--shadow-soft);
+  }
+}
+
+@keyframes flashWrong {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 154, 168, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 154, 168, 0.55);
+  }
+  100% {
+    box-shadow: var(--shadow-deep), var(--shadow-soft);
+  }
+}
+
+@keyframes feedbackPop {
+  0% {
+    transform: scale(0.98);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
