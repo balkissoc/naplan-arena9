@@ -1,4 +1,8 @@
 const startBattleBtn = document.getElementById("start-battle-btn");
+const leaderboardBtn = document.getElementById("leaderboard-btn");
+const skillsBtn = document.getElementById("skills-btn");
+const dailyQuestBtn = document.getElementById("daily-quest-btn");
+
 const menuScreen = document.getElementById("menu-screen");
 const battleScreen = document.getElementById("battle-screen");
 const resultsScreen = document.getElementById("results-screen");
@@ -29,44 +33,16 @@ const resultsXp = document.getElementById("results-xp");
 const resultsCoins = document.getElementById("results-coins");
 const resultsMessage = document.getElementById("results-message");
 
-const STORAGE_KEY = "naplanArenaProfile";
+const STORAGE_KEY = "naplanArenaProfileV2";
+const QUESTIONS_PER_BATTLE = 10;
 
-const questions = [
-  {
-    mode: "READING BLITZ",
-    question: "Which sentence best shows that the writer feels nervous?",
-    answers: [
-      { text: "He opened the gate and walked inside.", correct: false },
-      { text: "His hands shook as he reached for the handle.", correct: true },
-      { text: "The sun was shining over the playground.", correct: false },
-      { text: "He remembered the bus arrived at 8:15 am.", correct: false }
-    ]
-  },
-  {
-    mode: "NUMERACY SPRINT",
-    question: "What is 15% of 200?",
-    answers: [
-      { text: "20", correct: false },
-      { text: "25", correct: false },
-      { text: "30", correct: true },
-      { text: "35", correct: false }
-    ]
-  },
-  {
-    mode: "LANGUAGE CLASH",
-    question: "Which word is spelled correctly?",
-    answers: [
-      { text: "definately", correct: false },
-      { text: "definitely", correct: true },
-      { text: "defanitely", correct: false },
-      { text: "definetly", correct: false }
-    ]
-  }
-];
-
+let fullQuestionBank = Array.isArray(window.questionBank) ? window.questionBank : [];
+let battleQuestions = [];
 let currentQuestionIndex = 0;
 let score = 0;
 let questionAnswered = false;
+let battleXpEarned = 0;
+let battleCoinsEarned = 0;
 
 let player = {
   name: "Jamie",
@@ -83,7 +59,9 @@ const rankTable = [
   { minXp: 300, label: "Rank 4 • Strategist" },
   { minXp: 400, label: "Rank 5 • Scholar" },
   { minXp: 500, label: "Rank 6 • Elite" },
-  { minXp: 700, label: "Rank 7 • Master" }
+  { minXp: 700, label: "Rank 7 • Master" },
+  { minXp: 900, label: "Rank 8 • Champion" },
+  { minXp: 1200, label: "Rank 9 • Grandmaster" }
 ];
 
 function getRankLabel(currentXp) {
@@ -149,13 +127,59 @@ function showScreen(screenToShow) {
   screenToShow.classList.remove("hidden");
 }
 
+function shuffleArray(array) {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function buildBalancedBattleSet() {
+  if (!fullQuestionBank.length) return [];
+
+  const grouped = {};
+  for (const q of fullQuestionBank) {
+    if (!grouped[q.category]) grouped[q.category] = [];
+    grouped[q.category].push(q);
+  }
+
+  const categories = Object.keys(grouped);
+  const picked = [];
+
+  const shuffledCategories = shuffleArray(categories);
+
+  for (const category of shuffledCategories) {
+    if (picked.length >= QUESTIONS_PER_BATTLE) break;
+    const pool = shuffleArray(grouped[category]);
+    if (pool.length > 0) {
+      picked.push(pool[0]);
+    }
+  }
+
+  if (picked.length < QUESTIONS_PER_BATTLE) {
+    const usedIds = new Set(picked.map(q => q.id));
+    const remaining = shuffleArray(
+      fullQuestionBank.filter(q => !usedIds.has(q.id))
+    );
+
+    for (const q of remaining) {
+      if (picked.length >= QUESTIONS_PER_BATTLE) break;
+      picked.push(q);
+    }
+  }
+
+  return shuffleArray(picked).slice(0, QUESTIONS_PER_BATTLE);
+}
+
 function showQuestion() {
-  const current = questions[currentQuestionIndex];
+  const current = battleQuestions[currentQuestionIndex];
   const letters = ["A", "B", "C", "D"];
 
   questionAnswered = false;
-  battleMode.textContent = current.mode;
-  questionCount.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+  battleMode.textContent = current.mode || "BATTLE";
+  questionCount.textContent = `Question ${currentQuestionIndex + 1} of ${battleQuestions.length}`;
   battleQuestion.textContent = current.question;
   answerList.innerHTML = "";
   feedback.textContent = "";
@@ -178,7 +202,7 @@ function selectAnswer(selectedIndex) {
 
   questionAnswered = true;
 
-  const current = questions[currentQuestionIndex];
+  const current = battleQuestions[currentQuestionIndex];
   const buttons = document.querySelectorAll(".answer-button");
   const selectedAnswer = current.answers[selectedIndex];
 
@@ -196,13 +220,16 @@ function selectAnswer(selectedIndex) {
 
   if (selectedAnswer.correct) {
     score += 1;
+    battleXpEarned += 25;
+    battleCoinsEarned += 20;
     player.xp += 25;
     player.coins += 20;
     feedback.textContent = "Correct! +25 XP, +20 coins";
     feedback.className = "feedback correct";
   } else {
+    battleCoinsEarned += 5;
     player.coins += 5;
-    feedback.textContent = "Not quite. +5 coins for trying";
+    feedback.textContent = `Not quite. ${current.explanation}`;
     feedback.className = "feedback wrong";
   }
 
@@ -212,21 +239,21 @@ function selectAnswer(selectedIndex) {
 }
 
 function showResults() {
-  const earnedXp = score * 25;
-  const earnedCoins = score * 20 + (questions.length - score) * 5;
-
   resultsTitle.textContent =
-    score === questions.length ? "Perfect battle." :
-    score >= 2 ? "Strong effort." :
-    "Keep training.";
+    score === battleQuestions.length
+      ? "Perfect battle."
+      : score >= Math.ceil(battleQuestions.length * 0.7)
+      ? "Strong effort."
+      : "Keep training.";
 
-  resultsScore.textContent = `${score} / ${questions.length} correct`;
-  resultsXp.textContent = `+${earnedXp} XP`;
-  resultsCoins.textContent = `+${earnedCoins} coins`;
+  resultsScore.textContent = `${score} / ${battleQuestions.length} correct`;
+  resultsXp.textContent = `+${battleXpEarned} XP`;
+  resultsCoins.textContent = `+${battleCoinsEarned} coins`;
+
   resultsMessage.textContent =
-    score === questions.length
+    score === battleQuestions.length
       ? "Outstanding work. You cleared every question."
-      : score >= 2
+      : score >= Math.ceil(battleQuestions.length * 0.7)
       ? "You are improving well. Keep pushing."
       : "Every battle builds skill. Go again.";
 
@@ -235,8 +262,17 @@ function showResults() {
 }
 
 function startBattle() {
+  if (!fullQuestionBank.length) {
+    alert("No questions were loaded. Please check questions.js.");
+    return;
+  }
+
+  battleQuestions = buildBalancedBattleSet();
   currentQuestionIndex = 0;
   score = 0;
+  battleXpEarned = 0;
+  battleCoinsEarned = 0;
+
   showScreen(battleScreen);
   showQuestion();
 }
@@ -265,7 +301,7 @@ nextBtn.addEventListener("click", () => {
 
   currentQuestionIndex += 1;
 
-  if (currentQuestionIndex < questions.length) {
+  if (currentQuestionIndex < battleQuestions.length) {
     showQuestion();
   } else {
     showResults();
@@ -280,6 +316,18 @@ playAgainBtn.addEventListener("click", startBattle);
 
 resultsMenuBtn.addEventListener("click", () => {
   showScreen(menuScreen);
+});
+
+leaderboardBtn.addEventListener("click", () => {
+  alert("Leaderboard coming soon.");
+});
+
+skillsBtn.addEventListener("click", () => {
+  alert("Skills panel coming soon.");
+});
+
+dailyQuestBtn.addEventListener("click", () => {
+  alert("Daily Quest coming soon.");
 });
 
 document.addEventListener("keydown", (event) => {
