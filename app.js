@@ -350,7 +350,7 @@ function showQuestion() {
   questionAnswered = false;
   battleMode.textContent = currentBattleLabel.toUpperCase();
   questionCount.textContent = `Question ${currentQuestionIndex + 1} of ${battleQuestions.length}`;
-  battleQuestion.textContent = current.question;
+  battleQuestion.textContent = (current.question || "").replace(/\\n/g, "\n");
   answerList.innerHTML = "";
   feedback.textContent = "";
   feedback.className = "feedback";
