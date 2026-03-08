@@ -2,8 +2,10 @@ const startBattleBtn = document.getElementById("start-battle-btn");
 const leaderboardBtn = document.getElementById("leaderboard-btn");
 const skillsBtn = document.getElementById("skills-btn");
 const dailyQuestBtn = document.getElementById("daily-quest-btn");
+const soundToggleBtn = document.getElementById("sound-toggle-btn");
 
 const menuScreen = document.getElementById("menu-screen");
+const skillsPanel = document.getElementById("skills-panel");
 const battleScreen = document.getElementById("battle-screen");
 const resultsScreen = document.getElementById("results-screen");
 
@@ -11,6 +13,7 @@ const backMenuBtn = document.getElementById("back-menu-btn");
 const nextBtn = document.getElementById("next-btn");
 const playAgainBtn = document.getElementById("play-again-btn");
 const resultsMenuBtn = document.getElementById("results-menu-btn");
+const closeSkillsBtn = document.getElementById("close-skills-btn");
 
 const battleMode = document.getElementById("battle-mode");
 const questionCount = document.getElementById("question-count");
@@ -34,7 +37,11 @@ const resultsXp = document.getElementById("results-xp");
 const resultsCoins = document.getElementById("results-coins");
 const resultsMessage = document.getElementById("results-message");
 
-const STORAGE_KEY = "naplanArenaProfileV4";
+const skillsGrid = document.getElementById("skills-grid");
+const floatingRewards = document.getElementById("floating-rewards");
+const screenTransition = document.getElementById("screen-transition");
+
+const STORAGE_KEY = "naplanArenaProfileV5";
 const DEFAULT_QUESTIONS_PER_BATTLE = 10;
 const DAILY_QUEST_QUESTIONS = 5;
 
@@ -61,6 +68,7 @@ let battleCoinsEarned = 0;
 let currentBattleLabel = "Mixed Battle";
 let currentBattleSource = "mixed";
 let currentSkillCategory = null;
+let soundEnabled = true;
 
 let player = {
   name: "Jamie",
@@ -70,7 +78,8 @@ let player = {
   gems: 48,
   totalBattles: 0,
   bestScore: 0,
-  lastMode: "Mixed Battle"
+  lastMode: "Mixed Battle",
+  soundEnabled: true
 };
 
 const rankTable = [
@@ -113,7 +122,8 @@ function loadProfile() {
       gems: Number(saved.gems ?? 48),
       totalBattles: Number(saved.totalBattles ?? 0),
       bestScore: Number(saved.bestScore ?? 0),
-      lastMode: saved.lastMode || "Mixed Battle"
+      lastMode: saved.lastMode || "Mixed Battle",
+      soundEnabled: saved.soundEnabled !== false
     };
   } catch (error) {
     console.error("Could not load profile", error);
@@ -129,6 +139,15 @@ function askForPlayerNameIfNeeded() {
     player.name = enteredName.trim();
     saveProfile();
   }
+}
+
+function updateSoundUi() {
+  soundEnabled = player.soundEnabled !== false;
+
+  if (!soundToggleBtn) return;
+
+  soundToggleBtn.textContent = soundEnabled ? "🔊 Sound On" : "🔇 Sound Off";
+  soundToggleBtn.classList.toggle("muted", !soundEnabled);
 }
 
 function animateXpBar() {
@@ -156,13 +175,23 @@ function updatePlayerUi(animateXp = false) {
   coinCount.textContent = player.coins;
   gemCount.textContent = player.gems;
   resultsRank.textContent = getRankLabel(player.xp);
+  updateSoundUi();
+}
+
+function playScreenTransition() {
+  if (!screenTransition) return;
+  screenTransition.classList.remove("active");
+  void screenTransition.offsetWidth;
+  screenTransition.classList.add("active");
 }
 
 function showScreen(screenToShow) {
   menuScreen.classList.add("hidden");
+  skillsPanel.classList.add("hidden");
   battleScreen.classList.add("hidden");
   resultsScreen.classList.add("hidden");
   screenToShow.classList.remove("hidden");
+  playScreenTransition();
 }
 
 function shuffleArray(array) {
@@ -222,7 +251,7 @@ function addPressAnimation(button) {
 }
 
 function attachPressAnimations() {
-  const buttons = document.querySelectorAll(".menu-button, .answer-button");
+  const buttons = document.querySelectorAll(".menu-button, .answer-button, .skill-card, .sound-toggle");
   buttons.forEach((button) => {
     button.addEventListener("mousedown", () => addPressAnimation(button));
     button.addEventListener("touchstart", () => addPressAnimation(button), { passive: true });
@@ -247,6 +276,8 @@ function flashBattleCard(type) {
 }
 
 function createTone(frequency, duration, type = "sine", volume = 0.03) {
+  if (!soundEnabled) return;
+
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return;
 
@@ -279,6 +310,8 @@ function createTone(frequency, duration, type = "sine", volume = 0.03) {
 
 function playSound(type) {
   try {
+    if (!soundEnabled) return;
+
     if (type === "click") {
       createTone(420, 0.05, "square", 0.02);
     } else if (type === "correct") {
@@ -295,6 +328,19 @@ function playSound(type) {
   } catch (error) {
     console.error("Sound playback failed", error);
   }
+}
+
+function spawnFloatingReward(text, type) {
+  if (!floatingRewards) return;
+
+  const el = document.createElement("div");
+  el.className = `floating-reward ${type}`;
+  el.textContent = text;
+  floatingRewards.appendChild(el);
+
+  setTimeout(() => {
+    el.remove();
+  }, 1000);
 }
 
 function showQuestion() {
@@ -358,6 +404,8 @@ function selectAnswer(selectedIndex) {
     feedback.className = "feedback correct";
     flashBattleCard("correct");
     playSound("correct");
+    spawnFloatingReward("+25 XP", "xp");
+    spawnFloatingReward("+20 Coins", "coins");
     updatePlayerUi(true);
   } else {
     battleCoinsEarned += 5;
@@ -366,6 +414,7 @@ function selectAnswer(selectedIndex) {
     feedback.className = "feedback wrong";
     flashBattleCard("wrong");
     playSound("wrong");
+    spawnFloatingReward("+5 Coins", "coins");
     updatePlayerUi(false);
   }
 
@@ -432,26 +481,17 @@ function startDailyQuest() {
   startBattleWithQuestions(questions, "Daily Quest", "daily");
 }
 
-function openSkillsMenu() {
-  const options = Object.entries(CATEGORY_LABELS)
-    .map(([key, label], index) => `${index + 1}. ${label}`)
-    .join("\n");
+function openSkillsPanel() {
+  playSound("click");
+  showScreen(skillsPanel);
+}
 
-  const choice = prompt(
-    `Choose a skill area by number:\n\n${options}\n\nEnter a number from 1 to ${Object.keys(CATEGORY_LABELS).length}:`
-  );
+function closeSkillsPanel() {
+  showScreen(menuScreen);
+}
 
-  if (!choice) return;
-
-  const index = Number(choice) - 1;
-  const entries = Object.entries(CATEGORY_LABELS);
-
-  if (Number.isNaN(index) || index < 0 || index >= entries.length) {
-    alert("That was not a valid choice.");
-    return;
-  }
-
-  const [category, label] = entries[index];
+function startSkillCategory(category) {
+  const label = CATEGORY_LABELS[category];
   const questions = buildCategoryBattleSet(category, DEFAULT_QUESTIONS_PER_BATTLE);
   currentSkillCategory = category;
   startBattleWithQuestions(questions, `${label} Practice`, "skills");
@@ -500,7 +540,8 @@ function resetProfile() {
     gems: 48,
     totalBattles: 0,
     bestScore: 0,
-    lastMode: "Mixed Battle"
+    lastMode: "Mixed Battle",
+    soundEnabled: true
   };
 
   saveProfile();
@@ -509,21 +550,44 @@ function resetProfile() {
   showScreen(menuScreen);
 }
 
-[startBattleBtn, leaderboardBtn, skillsBtn, dailyQuestBtn, nextBtn, playAgainBtn, resultsMenuBtn, backMenuBtn]
+function toggleSound() {
+  player.soundEnabled = !player.soundEnabled;
+  soundEnabled = player.soundEnabled;
+  updateSoundUi();
+  saveProfile();
+
+  if (soundEnabled) {
+    playSound("click");
+  }
+}
+
+[startBattleBtn, leaderboardBtn, skillsBtn, dailyQuestBtn, nextBtn, playAgainBtn, resultsMenuBtn, backMenuBtn, closeSkillsBtn, soundToggleBtn]
   .filter(Boolean)
   .forEach((button) => {
     button.addEventListener("click", () => {
       addPressAnimation(button);
-      playSound("click");
     });
   });
 
-startBattleBtn.addEventListener("click", startMixedBattle);
-dailyQuestBtn.addEventListener("click", startDailyQuest);
-skillsBtn.addEventListener("click", openSkillsMenu);
+startBattleBtn.addEventListener("click", () => {
+  playSound("click");
+  startMixedBattle();
+});
+
+dailyQuestBtn.addEventListener("click", () => {
+  playSound("click");
+  startDailyQuest();
+});
+
+skillsBtn.addEventListener("click", openSkillsPanel);
+closeSkillsBtn.addEventListener("click", closeSkillsPanel);
+
 leaderboardBtn.addEventListener("click", showLeaderboard);
+soundToggleBtn.addEventListener("click", toggleSound);
 
 nextBtn.addEventListener("click", () => {
+  playSound("click");
+
   if (!questionAnswered) return;
 
   currentQuestionIndex += 1;
@@ -536,14 +600,33 @@ nextBtn.addEventListener("click", () => {
 });
 
 backMenuBtn.addEventListener("click", () => {
+  playSound("click");
   showScreen(menuScreen);
 });
 
-playAgainBtn.addEventListener("click", replayCurrentMode);
+playAgainBtn.addEventListener("click", () => {
+  playSound("click");
+  replayCurrentMode();
+});
 
 resultsMenuBtn.addEventListener("click", () => {
+  playSound("click");
   showScreen(menuScreen);
 });
+
+if (skillsGrid) {
+  skillsGrid.addEventListener("click", (event) => {
+    const button = event.target.closest(".skill-card");
+    if (!button) return;
+
+    const category = button.dataset.category;
+    if (!category) return;
+
+    addPressAnimation(button);
+    playSound("click");
+    startSkillCategory(category);
+  });
+}
 
 document.addEventListener("keydown", (event) => {
   if (event.key.toLowerCase() === "r" && event.shiftKey) {
@@ -552,6 +635,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 loadProfile();
+soundEnabled = player.soundEnabled !== false;
 askForPlayerNameIfNeeded();
 updatePlayerUi();
 showScreen(menuScreen);
