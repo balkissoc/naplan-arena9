@@ -33,8 +33,22 @@ const resultsXp = document.getElementById("results-xp");
 const resultsCoins = document.getElementById("results-coins");
 const resultsMessage = document.getElementById("results-message");
 
-const STORAGE_KEY = "naplanArenaProfileV2";
-const QUESTIONS_PER_BATTLE = 10;
+const STORAGE_KEY = "naplanArenaProfileV3";
+const DEFAULT_QUESTIONS_PER_BATTLE = 10;
+const DAILY_QUEST_QUESTIONS = 5;
+
+const CATEGORY_LABELS = {
+  writing_skills: "Writing",
+  reading: "Reading",
+  spelling: "Spelling",
+  grammar_punctuation: "Grammar & Punctuation",
+  number_non_calculator: "Number (No Calculator)",
+  number_calculator_allowed: "Number (Calculator)",
+  algebra_calculator_allowed: "Algebra",
+  geometry_calculator_allowed: "Geometry",
+  measurement_calculator_allowed: "Measurement",
+  chance_data_calculator_allowed: "Chance & Data"
+};
 
 let fullQuestionBank = Array.isArray(window.questionBank) ? window.questionBank : [];
 let battleQuestions = [];
@@ -43,13 +57,19 @@ let score = 0;
 let questionAnswered = false;
 let battleXpEarned = 0;
 let battleCoinsEarned = 0;
+let currentBattleLabel = "Mixed Battle";
+let currentBattleSource = "mixed";
+let currentSkillCategory = null;
 
 let player = {
   name: "Jamie",
   xp: 420,
   xpMax: 500,
   coins: 1250,
-  gems: 48
+  gems: 48,
+  totalBattles: 0,
+  bestScore: 0,
+  lastMode: "Mixed Battle"
 };
 
 const rankTable = [
@@ -89,7 +109,10 @@ function loadProfile() {
       xp: Number(saved.xp ?? 420),
       xpMax: Number(saved.xpMax ?? 500),
       coins: Number(saved.coins ?? 1250),
-      gems: Number(saved.gems ?? 48)
+      gems: Number(saved.gems ?? 48),
+      totalBattles: Number(saved.totalBattles ?? 0),
+      bestScore: Number(saved.bestScore ?? 0),
+      lastMode: saved.lastMode || "Mixed Battle"
     };
   } catch (error) {
     console.error("Could not load profile", error);
@@ -129,14 +152,18 @@ function showScreen(screenToShow) {
 
 function shuffleArray(array) {
   const copy = [...array];
-  for (let i = copy.length - 1; i > 0; i--) {
+  for (let i = copy.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
 }
 
-function buildBalancedBattleSet() {
+function takeRandomQuestions(sourceQuestions, count) {
+  return shuffleArray(sourceQuestions).slice(0, Math.min(count, sourceQuestions.length));
+}
+
+function buildMixedBattleSet(count) {
   if (!fullQuestionBank.length) return [];
 
   const grouped = {};
@@ -145,32 +172,30 @@ function buildBalancedBattleSet() {
     grouped[q.category].push(q);
   }
 
-  const categories = Object.keys(grouped);
+  const categories = shuffleArray(Object.keys(grouped));
   const picked = [];
 
-  const shuffledCategories = shuffleArray(categories);
-
-  for (const category of shuffledCategories) {
-    if (picked.length >= QUESTIONS_PER_BATTLE) break;
+  for (const category of categories) {
+    if (picked.length >= count) break;
     const pool = shuffleArray(grouped[category]);
-    if (pool.length > 0) {
-      picked.push(pool[0]);
-    }
+    if (pool.length > 0) picked.push(pool[0]);
   }
 
-  if (picked.length < QUESTIONS_PER_BATTLE) {
-    const usedIds = new Set(picked.map(q => q.id));
-    const remaining = shuffleArray(
-      fullQuestionBank.filter(q => !usedIds.has(q.id))
-    );
-
+  if (picked.length < count) {
+    const usedIds = new Set(picked.map((q) => q.id));
+    const remaining = shuffleArray(fullQuestionBank.filter((q) => !usedIds.has(q.id)));
     for (const q of remaining) {
-      if (picked.length >= QUESTIONS_PER_BATTLE) break;
+      if (picked.length >= count) break;
       picked.push(q);
     }
   }
 
-  return shuffleArray(picked).slice(0, QUESTIONS_PER_BATTLE);
+  return shuffleArray(picked).slice(0, count);
+}
+
+function buildCategoryBattleSet(category, count) {
+  const pool = fullQuestionBank.filter((q) => q.category === category);
+  return takeRandomQuestions(pool, count);
 }
 
 function showQuestion() {
@@ -178,7 +203,7 @@ function showQuestion() {
   const letters = ["A", "B", "C", "D"];
 
   questionAnswered = false;
-  battleMode.textContent = current.mode || "BATTLE";
+  battleMode.textContent = currentBattleLabel.toUpperCase();
   questionCount.textContent = `Question ${currentQuestionIndex + 1} of ${battleQuestions.length}`;
   battleQuestion.textContent = current.question;
   answerList.innerHTML = "";
@@ -239,6 +264,11 @@ function selectAnswer(selectedIndex) {
 }
 
 function showResults() {
+  player.totalBattles += 1;
+  player.bestScore = Math.max(player.bestScore, score);
+  player.lastMode = currentBattleLabel;
+  saveProfile();
+
   resultsTitle.textContent =
     score === battleQuestions.length
       ? "Perfect battle."
@@ -261,20 +291,90 @@ function showResults() {
   showScreen(resultsScreen);
 }
 
-function startBattle() {
-  if (!fullQuestionBank.length) {
-    alert("No questions were loaded. Please check questions.js.");
+function startBattleWithQuestions(questions, label, source) {
+  if (!questions.length) {
+    alert("No questions were found for that mode.");
     return;
   }
 
-  battleQuestions = buildBalancedBattleSet();
+  battleQuestions = questions;
   currentQuestionIndex = 0;
   score = 0;
   battleXpEarned = 0;
   battleCoinsEarned = 0;
+  currentBattleLabel = label;
+  currentBattleSource = source;
 
   showScreen(battleScreen);
   showQuestion();
+}
+
+function startMixedBattle() {
+  const questions = buildMixedBattleSet(DEFAULT_QUESTIONS_PER_BATTLE);
+  currentSkillCategory = null;
+  startBattleWithQuestions(questions, "Mixed Battle", "mixed");
+}
+
+function startDailyQuest() {
+  const questions = buildMixedBattleSet(DAILY_QUEST_QUESTIONS);
+  currentSkillCategory = null;
+  startBattleWithQuestions(questions, "Daily Quest", "daily");
+}
+
+function openSkillsMenu() {
+  const options = Object.entries(CATEGORY_LABELS)
+    .map(([key, label], index) => `${index + 1}. ${label}`)
+    .join("\n");
+
+  const choice = prompt(
+    `Choose a skill area by number:\n\n${options}\n\nEnter a number from 1 to ${Object.keys(CATEGORY_LABELS).length}:`
+  );
+
+  if (!choice) return;
+
+  const index = Number(choice) - 1;
+  const entries = Object.entries(CATEGORY_LABELS);
+
+  if (Number.isNaN(index) || index < 0 || index >= entries.length) {
+    alert("That was not a valid choice.");
+    return;
+  }
+
+  const [category, label] = entries[index];
+  const questions = buildCategoryBattleSet(category, DEFAULT_QUESTIONS_PER_BATTLE);
+  currentSkillCategory = category;
+  startBattleWithQuestions(questions, `${label} Practice`, "skills");
+}
+
+function showLeaderboard() {
+  alert(
+    `Player: ${player.name}\n` +
+    `Rank: ${getRankLabel(player.xp)}\n` +
+    `XP: ${player.xp}\n` +
+    `Coins: ${player.coins}\n` +
+    `Total Battles: ${player.totalBattles}\n` +
+    `Best Score: ${player.bestScore}\n` +
+    `Last Mode: ${player.lastMode}`
+  );
+}
+
+function replayCurrentMode() {
+  if (currentBattleSource === "daily") {
+    startDailyQuest();
+    return;
+  }
+
+  if (currentBattleSource === "skills" && currentSkillCategory) {
+    const questions = buildCategoryBattleSet(currentSkillCategory, DEFAULT_QUESTIONS_PER_BATTLE);
+    startBattleWithQuestions(
+      questions,
+      `${CATEGORY_LABELS[currentSkillCategory]} Practice`,
+      "skills"
+    );
+    return;
+  }
+
+  startMixedBattle();
 }
 
 function resetProfile() {
@@ -285,7 +385,10 @@ function resetProfile() {
     xp: 420,
     xpMax: 500,
     coins: 1250,
-    gems: 48
+    gems: 48,
+    totalBattles: 0,
+    bestScore: 0,
+    lastMode: "Mixed Battle"
   };
 
   saveProfile();
@@ -294,7 +397,10 @@ function resetProfile() {
   showScreen(menuScreen);
 }
 
-startBattleBtn.addEventListener("click", startBattle);
+startBattleBtn.addEventListener("click", startMixedBattle);
+dailyQuestBtn.addEventListener("click", startDailyQuest);
+skillsBtn.addEventListener("click", openSkillsMenu);
+leaderboardBtn.addEventListener("click", showLeaderboard);
 
 nextBtn.addEventListener("click", () => {
   if (!questionAnswered) return;
@@ -312,22 +418,10 @@ backMenuBtn.addEventListener("click", () => {
   showScreen(menuScreen);
 });
 
-playAgainBtn.addEventListener("click", startBattle);
+playAgainBtn.addEventListener("click", replayCurrentMode);
 
 resultsMenuBtn.addEventListener("click", () => {
   showScreen(menuScreen);
-});
-
-leaderboardBtn.addEventListener("click", () => {
-  alert("Leaderboard coming soon.");
-});
-
-skillsBtn.addEventListener("click", () => {
-  alert("Skills panel coming soon.");
-});
-
-dailyQuestBtn.addEventListener("click", () => {
-  alert("Daily Quest coming soon.");
 });
 
 document.addEventListener("keydown", (event) => {
