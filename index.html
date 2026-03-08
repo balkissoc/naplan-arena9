@@ -4,9 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NAPLAN Arena</title>
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
+  <div class="screen-transition" id="screen-transition"></div>
+
   <div class="screen">
     <header class="top-bar">
       <div class="profile-pill">
@@ -17,9 +19,12 @@
         </div>
       </div>
 
-      <div class="currencies">
-        <div class="currency coin" id="coin-count">1250</div>
-        <div class="currency gem" id="gem-count">48</div>
+      <div class="top-actions">
+        <div class="currencies">
+          <div class="currency coin" id="coin-count">1250</div>
+          <div class="currency gem" id="gem-count">48</div>
+        </div>
+        <button class="sound-toggle" id="sound-toggle-btn" type="button">🔊 Sound On</button>
       </div>
     </header>
 
@@ -50,11 +55,35 @@
       </section>
     </main>
 
+    <section class="skills-panel hidden" id="skills-panel">
+      <div class="battle-card">
+        <div class="battle-header">
+          <div class="battle-mode">SKILLS MENU</div>
+          <button class="menu-button small-button" id="close-skills-btn" type="button">✖ Close</button>
+        </div>
+
+        <h2 class="battle-question">Choose a skill area</h2>
+
+        <div class="skills-grid" id="skills-grid">
+          <button class="skill-card" data-category="writing_skills">Writing</button>
+          <button class="skill-card" data-category="reading">Reading</button>
+          <button class="skill-card" data-category="spelling">Spelling</button>
+          <button class="skill-card" data-category="grammar_punctuation">Grammar & Punctuation</button>
+          <button class="skill-card" data-category="number_non_calculator">Number (No Calculator)</button>
+          <button class="skill-card" data-category="number_calculator_allowed">Number (Calculator)</button>
+          <button class="skill-card" data-category="algebra_calculator_allowed">Algebra</button>
+          <button class="skill-card" data-category="geometry_calculator_allowed">Geometry</button>
+          <button class="skill-card" data-category="measurement_calculator_allowed">Measurement</button>
+          <button class="skill-card" data-category="chance_data_calculator_allowed">Chance & Data</button>
+        </div>
+      </div>
+    </section>
+
     <section class="battle-screen hidden" id="battle-screen" aria-live="polite">
       <div class="battle-card">
         <div class="battle-header">
           <div class="battle-mode" id="battle-mode">READING BLITZ</div>
-          <div class="question-count" id="question-count">Question 1 of 3</div>
+          <div class="question-count" id="question-count">Question 1 of 10</div>
         </div>
 
         <h2 class="battle-question" id="battle-question">
@@ -65,8 +94,8 @@
 
         <div class="battle-footer">
           <div class="feedback" id="feedback"></div>
-          <button class="menu-button next-button hidden" id="next-btn">Next</button>
-          <button class="menu-button hidden" id="back-menu-btn">⬅ Back to Menu</button>
+          <button class="menu-button next-button hidden" id="next-btn" type="button">Next</button>
+          <button class="menu-button hidden" id="back-menu-btn" type="button">⬅ Back to Menu</button>
         </div>
       </div>
     </section>
@@ -86,7 +115,7 @@
           <div class="profile-pill">
             <div class="profile-text">
               <div class="player-name">Score</div>
-              <div class="player-rank" id="results-score">0 / 3 correct</div>
+              <div class="player-rank" id="results-score">0 / 10 correct</div>
             </div>
           </div>
 
@@ -107,14 +136,15 @@
 
         <div class="battle-footer">
           <div class="feedback correct" id="results-message">You are improving.</div>
-          <button class="menu-button next-button" id="play-again-btn">⚔ Play Again</button>
-          <button class="menu-button" id="results-menu-btn">⬅ Back to Menu</button>
+          <button class="menu-button next-button" id="play-again-btn" type="button">⚔ Play Again</button>
+          <button class="menu-button" id="results-menu-btn" type="button">⬅ Back to Menu</button>
         </div>
       </div>
     </section>
   </div>
 
-  <!-- Load question bank first, then app logic -->
+  <div id="floating-rewards"></div>
+
   <script src="questions.js"></script>
   <script src="app.js"></script>
 </body>
