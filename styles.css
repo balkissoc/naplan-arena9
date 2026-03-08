@@ -570,3 +570,163 @@ button {
     opacity: 1;
   }
 }
+/* --- UI upgrades: sound toggle, skills panel, floating rewards, transitions --- */
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sound-toggle {
+  border: none;
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(180deg, #ffffff, #dce8ff);
+  color: #1a1a1a;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.sound-toggle:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+}
+
+.sound-toggle.muted {
+  background: linear-gradient(180deg, #ffd0d0, #ffb0b0);
+}
+
+.skills-panel {
+  margin-top: 28px;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.skill-card {
+  border: none;
+  border-radius: 20px;
+  padding: 20px 18px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #171717;
+  background: linear-gradient(180deg, #ffffff, #e7edff);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.skill-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  filter: brightness(1.02);
+}
+
+.skill-card.pressed {
+  transform: translateY(3px) scale(0.98);
+}
+
+.small-button {
+  width: auto;
+  padding: 12px 18px;
+  font-size: 1rem;
+}
+
+#floating-rewards {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.floating-reward {
+  position: fixed;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, 0);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+  animation: rewardFloat 1s ease forwards;
+}
+
+.floating-reward.xp {
+  background: linear-gradient(180deg, #3ad7ff, #118cff);
+}
+
+.floating-reward.coins {
+  background: linear-gradient(180deg, #ffd95f, #ffb300);
+  color: #171717;
+}
+
+@keyframes rewardFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.9);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -6px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -70px) scale(1.04);
+  }
+}
+
+.screen-transition {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(80, 110, 255, 0.35), rgba(15, 18, 48, 0.85));
+  opacity: 0;
+  pointer-events: none;
+  z-index: 998;
+}
+
+.screen-transition.active {
+  animation: screenFlash 0.42s ease;
+}
+
+@keyframes screenFlash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .top-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .sound-toggle {
+    width: 100%;
+  }
+
+  .top-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
