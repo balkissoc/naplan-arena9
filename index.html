@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NAPLAN Arena</title>
-  <link rel="stylesheet" href="styles.css?v=2" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
   <div class="screen">
@@ -23,7 +23,7 @@
       </div>
     </header>
 
-    <main class="main-panel">
+    <main class="main-panel" id="menu-screen">
       <section class="hero-card">
         <div class="badge">YEAR 9</div>
         <h1 class="title">NAPLAN ARENA</h1>
@@ -32,21 +32,42 @@
         <div class="xp-wrap">
           <div class="xp-label">
             <span>XP Progress</span>
-            <span>420 / 500</span>
+            <span id="xp-text">420 / 500</span>
           </div>
           <div class="xp-bar">
-            <div class="xp-fill"></div>
+            <div class="xp-fill" id="xp-fill"></div>
           </div>
         </div>
       </section>
 
       <section class="menu">
-        <button class="menu-button primary">⚔ Start Battle</button>
+        <button class="menu-button primary" id="start-battle-btn">⚔ Start Battle</button>
         <button class="menu-button">🏆 Leaderboard</button>
         <button class="menu-button">🎒 Skills</button>
         <button class="menu-button">🎯 Daily Quest</button>
       </section>
     </main>
+
+    <section class="battle-screen hidden" id="battle-screen">
+      <div class="battle-card">
+        <div class="battle-header">
+          <div class="battle-mode">READING BLITZ</div>
+          <div class="question-count" id="question-count">Question 1 of 3</div>
+        </div>
+
+        <h2 class="battle-question" id="battle-question">
+          Loading question...
+        </h2>
+
+        <div class="answer-list" id="answer-list"></div>
+
+        <div class="battle-footer">
+          <div class="feedback" id="feedback"></div>
+          <button class="menu-button next-button hidden" id="next-btn">Next</button>
+          <button class="menu-button hidden" id="back-menu-btn">⬅ Back to Menu</button>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script src="app.js"></script>
