@@ -1,37 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>NAPLAN Arena</title>
-
-<link rel="stylesheet" href="styles.css">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAPLAN Arena</title>
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
-
 <body>
+  <div class="screen">
+    <header class="top-bar">
+      <div class="profile-pill">
+        <div class="avatar">J</div>
+        <div class="profile-text">
+          <div class="player-name">Jamie</div>
+          <div class="player-rank">Rank 7 • Scholar</div>
+        </div>
+      </div>
 
-<div class="game-container">
+      <div class="currencies">
+        <div class="currency coin">1250</div>
+        <div class="currency gem">48</div>
+      </div>
+    </header>
 
-<h1 class="title">NAPLAN ARENA</h1>
+    <main class="main-panel">
+      <section class="hero-card">
+        <div class="badge">YEAR 9</div>
+        <h1 class="title">NAPLAN ARENA</h1>
+        <p class="subtitle">Battle through Reading, Numeracy and Language missions.</p>
 
-<div class="menu">
+        <div class="xp-wrap">
+          <div class="xp-label">
+            <span>XP Progress</span>
+            <span>420 / 500</span>
+          </div>
+          <div class="xp-bar">
+            <div class="xp-fill"></div>
+          </div>
+        </div>
+      </section>
 
-<button class="menu-button">⚔ Start Battle</button>
+      <section class="menu">
+        <button class="menu-button primary">⚔ Start Battle</button>
+        <button class="menu-button">🏆 Leaderboard</button>
+        <button class="menu-button">🎒 Skills</button>
+        <button class="menu-button">🎯 Daily Quest</button>
+      </section>
+    </main>
+  </div>
 
-<button class="menu-button">🏆 Leaderboard</button>
-
-<button class="menu-button">🎒 Skills</button>
-
-<button class="menu-button">⚙ Settings</button>
-
-</div>
-
-</div>
-
-<script src="app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>
