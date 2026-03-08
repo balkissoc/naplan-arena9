@@ -1,11 +1,43 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #1e1f4b;
-  color: white;
-  text-align: center;
-  padding: 40px;
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background: radial-gradient(circle at center,#2b2f77,#0d102b);
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+color:white;
 }
 
-h1 {
-  font-size: 3rem;
+.game-container{
+text-align:center;
+}
+
+.title{
+font-size:60px;
+letter-spacing:3px;
+margin-bottom:40px;
+text-shadow:0 0 20px #4fd3ff;
+}
+
+.menu{
+display:flex;
+flex-direction:column;
+gap:20px;
+}
+
+.menu-button{
+font-size:24px;
+padding:20px 40px;
+border:none;
+border-radius:12px;
+background:#ffcc00;
+color:black;
+cursor:pointer;
+box-shadow:0 6px 0 #caa000;
+transition:transform .1s;
+}
+
+.menu-button:hover{
+transform:scale(1.05);
 }
