@@ -18,9 +18,9 @@ const xpText = document.getElementById("xp-text");
 const xpFill = document.getElementById("xp-fill");
 const coinCount = document.getElementById("coin-count");
 const gemCount = document.getElementById("gem-count");
-const playerName = document.getElementById("player-name");
-const playerRank = document.getElementById("player-rank");
-const playerAvatar = document.getElementById("player-avatar");
+const playerNameEl = document.getElementById("player-name");
+const playerRankEl = document.getElementById("player-rank");
+const playerAvatarEl = document.getElementById("player-avatar");
 
 const resultsRank = document.getElementById("results-rank");
 const resultsTitle = document.getElementById("results-title");
@@ -28,6 +28,8 @@ const resultsScore = document.getElementById("results-score");
 const resultsXp = document.getElementById("results-xp");
 const resultsCoins = document.getElementById("results-coins");
 const resultsMessage = document.getElementById("results-message");
+
+const STORAGE_KEY = "naplanArenaProfile";
 
 const questions = [
   {
@@ -44,30 +46,35 @@ const questions = [
     mode: "NUMERACY SPRINT",
     question: "What is 15% of 200?",
     answers: [
-      { text: "A. 20", correct: false },
-      { text: "B. 25", correct: false },
-      { text: "C. 30", correct: true },
-      { text: "D. 35", correct: false }
+      { text: "20", correct: false },
+      { text: "25", correct: false },
+      { text: "30", correct: true },
+      { text: "35", correct: false }
     ]
   },
   {
     mode: "LANGUAGE CLASH",
     question: "Which word is spelled correctly?",
     answers: [
-      { text: "A. definately", correct: false },
-      { text: "B. definitely", correct: true },
-      { text: "C. defanitely", correct: false },
-      { text: "D. definetly", correct: false }
+      { text: "definately", correct: false },
+      { text: "definitely", correct: true },
+      { text: "defanitely", correct: false },
+      { text: "definetly", correct: false }
     ]
   }
 ];
 
 let currentQuestionIndex = 0;
 let score = 0;
-let xp = 420;
-let xpMax = 500;
-let coins = 1250;
-let gems = 48;
+let questionAnswered = false;
+
+let player = {
+  name: "Jamie",
+  xp: 420,
+  xpMax: 500,
+  coins: 1250,
+  gems: 48
+};
 
 const rankTable = [
   { minXp: 0, label: "Rank 1 • Rookie" },
@@ -89,18 +96,50 @@ function getRankLabel(currentXp) {
   return rank;
 }
 
-function updatePlayerUi() {
-  xpText.textContent = `${xp} / ${xpMax}`;
-  xpFill.style.width = `${Math.min((xp / xpMax) * 100, 100)}%`;
-  coinCount.textContent = coins;
-  gemCount.textContent = gems;
-  playerRank.textContent = getRankLabel(xp);
-  resultsRank.textContent = getRankLabel(xp);
+function saveProfile() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
+}
 
-  const currentName = playerName.textContent.trim();
-  if (currentName) {
-    playerAvatar.textContent = currentName.charAt(0).toUpperCase();
+function loadProfile() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+
+  try {
+    const saved = JSON.parse(raw);
+    player = {
+      name: saved.name || "Jamie",
+      xp: Number(saved.xp ?? 420),
+      xpMax: Number(saved.xpMax ?? 500),
+      coins: Number(saved.coins ?? 1250),
+      gems: Number(saved.gems ?? 48)
+    };
+  } catch (error) {
+    console.error("Could not load profile", error);
   }
+}
+
+function askForPlayerNameIfNeeded() {
+  if (player.name && player.name !== "Jamie") return;
+
+  const enteredName = prompt("Enter your player name:", player.name || "Jamie");
+
+  if (enteredName && enteredName.trim()) {
+    player.name = enteredName.trim();
+    saveProfile();
+  }
+}
+
+function updatePlayerUi() {
+  playerNameEl.textContent = player.name;
+  playerRankEl.textContent = getRankLabel(player.xp);
+  playerAvatarEl.textContent = player.name.charAt(0).toUpperCase();
+
+  xpText.textContent = `${player.xp} / ${player.xpMax}`;
+  xpFill.style.width = `${Math.min((player.xp / player.xpMax) * 100, 100)}%`;
+
+  coinCount.textContent = player.coins;
+  gemCount.textContent = player.gems;
+  resultsRank.textContent = getRankLabel(player.xp);
 }
 
 function showScreen(screenToShow) {
@@ -112,6 +151,9 @@ function showScreen(screenToShow) {
 
 function showQuestion() {
   const current = questions[currentQuestionIndex];
+  const letters = ["A", "B", "C", "D"];
+
+  questionAnswered = false;
   battleMode.textContent = current.mode;
   questionCount.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
   battleQuestion.textContent = current.question;
@@ -121,47 +163,51 @@ function showQuestion() {
   nextBtn.classList.add("hidden");
   backMenuBtn.classList.add("hidden");
 
-  const letters = ["A", "B", "C", "D"];
-
   current.answers.forEach((answer, index) => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "answer-button";
-
-    const textWithoutPrefix = answer.text.replace(/^[A-D]\.\s*/, "");
-    button.textContent = `${letters[index]}. ${textWithoutPrefix}`;
-
-    button.addEventListener("click", () => selectAnswer(answer.correct, button));
+    button.textContent = `${letters[index]}. ${answer.text}`;
+    button.addEventListener("click", () => selectAnswer(index));
     answerList.appendChild(button);
   });
 }
 
-function selectAnswer(isCorrect, clickedButton) {
+function selectAnswer(selectedIndex) {
+  if (questionAnswered) return;
+
+  questionAnswered = true;
+
+  const current = questions[currentQuestionIndex];
   const buttons = document.querySelectorAll(".answer-button");
-  buttons.forEach(btn => {
+  const selectedAnswer = current.answers[selectedIndex];
+
+  buttons.forEach((btn, index) => {
     btn.disabled = true;
+
+    if (current.answers[index].correct) {
+      btn.style.outline = "4px solid #7dff9b";
+    }
+
+    if (index === selectedIndex && !selectedAnswer.correct) {
+      btn.style.outline = "4px solid #ff9aa8";
+    }
   });
 
-  if (isCorrect) {
-    score++;
-    xp += 25;
-    coins += 20;
+  if (selectedAnswer.correct) {
+    score += 1;
+    player.xp += 25;
+    player.coins += 20;
     feedback.textContent = "Correct! +25 XP, +20 coins";
     feedback.className = "feedback correct";
-    clickedButton.style.outline = "4px solid #7dff9b";
   } else {
-    coins += 5;
+    player.coins += 5;
     feedback.textContent = "Not quite. +5 coins for trying";
     feedback.className = "feedback wrong";
-    clickedButton.style.outline = "4px solid #ff9aa8";
-
-    buttons.forEach((btn, index) => {
-      if (questions[currentQuestionIndex].answers[index].correct) {
-        btn.style.outline = "4px solid #7dff9b";
-      }
-    });
   }
 
   updatePlayerUi();
+  saveProfile();
   nextBtn.classList.remove("hidden");
 }
 
@@ -169,21 +215,22 @@ function showResults() {
   const earnedXp = score * 25;
   const earnedCoins = score * 20 + (questions.length - score) * 5;
 
-  resultsTitle.textContent = score === questions.length
-    ? "Perfect battle."
-    : score >= 2
-    ? "Strong effort."
-    : "Keep training.";
+  resultsTitle.textContent =
+    score === questions.length ? "Perfect battle." :
+    score >= 2 ? "Strong effort." :
+    "Keep training.";
 
   resultsScore.textContent = `${score} / ${questions.length} correct`;
   resultsXp.textContent = `+${earnedXp} XP`;
   resultsCoins.textContent = `+${earnedCoins} coins`;
-  resultsMessage.textContent = score === questions.length
-    ? "Outstanding work. You cleared every question."
-    : score >= 2
-    ? "You are improving well. Keep pushing."
-    : "Every battle builds skill. Go again.";
+  resultsMessage.textContent =
+    score === questions.length
+      ? "Outstanding work. You cleared every question."
+      : score >= 2
+      ? "You are improving well. Keep pushing."
+      : "Every battle builds skill. Go again.";
 
+  updatePlayerUi();
   showScreen(resultsScreen);
 }
 
@@ -194,10 +241,30 @@ function startBattle() {
   showQuestion();
 }
 
+function resetProfile() {
+  if (!confirm("Reset player name, XP, coins and gems?")) return;
+
+  player = {
+    name: "Jamie",
+    xp: 420,
+    xpMax: 500,
+    coins: 1250,
+    gems: 48
+  };
+
+  saveProfile();
+  askForPlayerNameIfNeeded();
+  updatePlayerUi();
+  showScreen(menuScreen);
+}
+
 startBattleBtn.addEventListener("click", startBattle);
 
 nextBtn.addEventListener("click", () => {
-  currentQuestionIndex++;
+  if (!questionAnswered) return;
+
+  currentQuestionIndex += 1;
+
   if (currentQuestionIndex < questions.length) {
     showQuestion();
   } else {
@@ -215,5 +282,14 @@ resultsMenuBtn.addEventListener("click", () => {
   showScreen(menuScreen);
 });
 
+document.addEventListener("keydown", (event) => {
+  if (event.key.toLowerCase() === "r" && event.shiftKey) {
+    resetProfile();
+  }
+});
+
+loadProfile();
+askForPlayerNameIfNeeded();
 updatePlayerUi();
 showScreen(menuScreen);
+saveProfile();
