@@ -731,3 +731,197 @@ button {
     align-items: stretch;
   }
 }
+/* --- Advanced game feel: coin fly, XP burst, streaks, transitions, level up --- */
+
+.battle-card.question-out {
+  animation: questionSlideOut 0.22s ease forwards;
+}
+
+.battle-card.question-in {
+  animation: questionSlideIn 0.28s ease forwards;
+}
+
+@keyframes questionSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-28px) scale(0.985);
+  }
+}
+
+@keyframes questionSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(28px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.streak-badge {
+  position: absolute;
+  top: -14px;
+  right: 20px;
+  z-index: 5;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #1a1a1a;
+  background: linear-gradient(180deg, #ffde59, #ff9f1c);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translateY(-10px) scale(0.9);
+  pointer-events: none;
+}
+
+.streak-badge.show {
+  animation: streakPop 0.45s ease forwards;
+}
+
+@keyframes streakPop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.coin-fly {
+  position: fixed;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff4a3, #ffd34d 45%, #ffb300 100%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.xp-particle {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #dfffff, #79e7ff 60%, #39caff 100%);
+  box-shadow: 0 0 12px rgba(121, 231, 255, 0.95);
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.level-up-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(80, 140, 255, 0.15), rgba(10, 12, 35, 0.65));
+  opacity: 0;
+}
+
+.level-up-overlay.show {
+  animation: levelUpFade 1.2s ease forwards;
+}
+
+.level-up-card {
+  min-width: min(86vw, 460px);
+  text-align: center;
+  padding: 28px 26px;
+  border-radius: 28px;
+  color: #ffffff;
+  background: linear-gradient(180deg, #3650d6, #25379f);
+  border: 4px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
+  transform: scale(0.9);
+}
+
+.level-up-overlay.show .level-up-card {
+  animation: levelUpCardPop 1s ease forwards;
+}
+
+.level-up-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  color: #ffdf5c;
+  text-shadow: 0 0 14px rgba(255, 223, 92, 0.65);
+}
+
+.level-up-rank {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #eaf0ff;
+}
+
+@keyframes levelUpFade {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes levelUpCardPop {
+  0% {
+    transform: scale(0.82);
+  }
+  35% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.coin-counter-bump {
+  animation: counterBump 0.35s ease;
+}
+
+@keyframes counterBump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+#xp-fill.xp-burst {
+  animation: xpBurstGlow 0.45s ease;
+}
+
+@keyframes xpBurstGlow {
+  0% {
+    box-shadow: 0 0 0 rgba(121, 231, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(121, 231, 255, 0.95);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(121, 231, 255, 0);
+  }
+}
