@@ -17,6 +17,7 @@ const questionCount = document.getElementById("question-count");
 const battleQuestion = document.getElementById("battle-question");
 const answerList = document.getElementById("answer-list");
 const feedback = document.getElementById("feedback");
+const battleCard = document.querySelector("#battle-screen .battle-card");
 
 const xpText = document.getElementById("xp-text");
 const xpFill = document.getElementById("xp-fill");
@@ -33,7 +34,7 @@ const resultsXp = document.getElementById("results-xp");
 const resultsCoins = document.getElementById("results-coins");
 const resultsMessage = document.getElementById("results-message");
 
-const STORAGE_KEY = "naplanArenaProfileV3";
+const STORAGE_KEY = "naplanArenaProfileV4";
 const DEFAULT_QUESTIONS_PER_BATTLE = 10;
 const DAILY_QUEST_QUESTIONS = 5;
 
@@ -130,13 +131,27 @@ function askForPlayerNameIfNeeded() {
   }
 }
 
-function updatePlayerUi() {
+function animateXpBar() {
+  xpFill.classList.remove("xp-pop");
+  void xpFill.offsetWidth;
+  xpFill.classList.add("xp-pop");
+
+  setTimeout(() => {
+    xpFill.classList.remove("xp-pop");
+  }, 500);
+}
+
+function updatePlayerUi(animateXp = false) {
   playerNameEl.textContent = player.name;
   playerRankEl.textContent = getRankLabel(player.xp);
   playerAvatarEl.textContent = player.name.charAt(0).toUpperCase();
 
   xpText.textContent = `${player.xp} / ${player.xpMax}`;
   xpFill.style.width = `${Math.min((player.xp / player.xpMax) * 100, 100)}%`;
+
+  if (animateXp) {
+    animateXpBar();
+  }
 
   coinCount.textContent = player.coins;
   gemCount.textContent = player.gems;
@@ -198,6 +213,90 @@ function buildCategoryBattleSet(category, count) {
   return takeRandomQuestions(pool, count);
 }
 
+function addPressAnimation(button) {
+  if (!button) return;
+  button.classList.add("pressed");
+  setTimeout(() => {
+    button.classList.remove("pressed");
+  }, 120);
+}
+
+function attachPressAnimations() {
+  const buttons = document.querySelectorAll(".menu-button, .answer-button");
+  buttons.forEach((button) => {
+    button.addEventListener("mousedown", () => addPressAnimation(button));
+    button.addEventListener("touchstart", () => addPressAnimation(button), { passive: true });
+  });
+}
+
+function flashBattleCard(type) {
+  if (!battleCard) return;
+
+  battleCard.classList.remove("flash-correct", "flash-wrong");
+  void battleCard.offsetWidth;
+
+  if (type === "correct") {
+    battleCard.classList.add("flash-correct");
+  } else {
+    battleCard.classList.add("flash-wrong");
+  }
+
+  setTimeout(() => {
+    battleCard.classList.remove("flash-correct", "flash-wrong");
+  }, 500);
+}
+
+function createTone(frequency, duration, type = "sine", volume = 0.03) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+
+  if (!window.__naplanAudioCtx) {
+    window.__naplanAudioCtx = new AudioContextClass();
+  }
+
+  const ctx = window.__naplanAudioCtx;
+
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+
+  const oscillator = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+
+  oscillator.type = type;
+  oscillator.frequency.value = frequency;
+  gainNode.gain.value = volume;
+
+  oscillator.connect(gainNode);
+  gainNode.connect(ctx.destination);
+
+  const now = ctx.currentTime;
+  oscillator.start(now);
+  gainNode.gain.setValueAtTime(volume, now);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  oscillator.stop(now + duration);
+}
+
+function playSound(type) {
+  try {
+    if (type === "click") {
+      createTone(420, 0.05, "square", 0.02);
+    } else if (type === "correct") {
+      createTone(660, 0.08, "triangle", 0.03);
+      setTimeout(() => createTone(880, 0.1, "triangle", 0.025), 60);
+    } else if (type === "wrong") {
+      createTone(220, 0.09, "sawtooth", 0.025);
+      setTimeout(() => createTone(180, 0.12, "sawtooth", 0.02), 50);
+    } else if (type === "results") {
+      createTone(523, 0.08, "triangle", 0.03);
+      setTimeout(() => createTone(659, 0.08, "triangle", 0.025), 90);
+      setTimeout(() => createTone(784, 0.12, "triangle", 0.025), 180);
+    }
+  } catch (error) {
+    console.error("Sound playback failed", error);
+  }
+}
+
 function showQuestion() {
   const current = battleQuestions[currentQuestionIndex];
   const letters = ["A", "B", "C", "D"];
@@ -217,7 +316,11 @@ function showQuestion() {
     button.type = "button";
     button.className = "answer-button";
     button.textContent = `${letters[index]}. ${answer.text}`;
-    button.addEventListener("click", () => selectAnswer(index));
+    button.addEventListener("click", () => {
+      addPressAnimation(button);
+      playSound("click");
+      selectAnswer(index);
+    });
     answerList.appendChild(button);
   });
 }
@@ -236,10 +339,12 @@ function selectAnswer(selectedIndex) {
 
     if (current.answers[index].correct) {
       btn.style.outline = "4px solid #7dff9b";
+      btn.classList.add("correct-answer");
     }
 
     if (index === selectedIndex && !selectedAnswer.correct) {
       btn.style.outline = "4px solid #ff9aa8";
+      btn.classList.add("wrong-answer");
     }
   });
 
@@ -251,14 +356,19 @@ function selectAnswer(selectedIndex) {
     player.coins += 20;
     feedback.textContent = "Correct! +25 XP, +20 coins";
     feedback.className = "feedback correct";
+    flashBattleCard("correct");
+    playSound("correct");
+    updatePlayerUi(true);
   } else {
     battleCoinsEarned += 5;
     player.coins += 5;
     feedback.textContent = `Not quite. ${current.explanation}`;
     feedback.className = "feedback wrong";
+    flashBattleCard("wrong");
+    playSound("wrong");
+    updatePlayerUi(false);
   }
 
-  updatePlayerUi();
   saveProfile();
   nextBtn.classList.remove("hidden");
 }
@@ -288,6 +398,7 @@ function showResults() {
       : "Every battle builds skill. Go again.";
 
   updatePlayerUi();
+  playSound("results");
   showScreen(resultsScreen);
 }
 
@@ -347,6 +458,7 @@ function openSkillsMenu() {
 }
 
 function showLeaderboard() {
+  playSound("click");
   alert(
     `Player: ${player.name}\n` +
     `Rank: ${getRankLabel(player.xp)}\n` +
@@ -397,6 +509,15 @@ function resetProfile() {
   showScreen(menuScreen);
 }
 
+[startBattleBtn, leaderboardBtn, skillsBtn, dailyQuestBtn, nextBtn, playAgainBtn, resultsMenuBtn, backMenuBtn]
+  .filter(Boolean)
+  .forEach((button) => {
+    button.addEventListener("click", () => {
+      addPressAnimation(button);
+      playSound("click");
+    });
+  });
+
 startBattleBtn.addEventListener("click", startMixedBattle);
 dailyQuestBtn.addEventListener("click", startDailyQuest);
 skillsBtn.addEventListener("click", openSkillsMenu);
@@ -435,3 +556,4 @@ askForPlayerNameIfNeeded();
 updatePlayerUi();
 showScreen(menuScreen);
 saveProfile();
+attachPressAnimations();
