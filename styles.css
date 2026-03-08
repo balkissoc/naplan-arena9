@@ -1,43 +1,223 @@
-body{
-margin:0;
-font-family:Arial, sans-serif;
-background: radial-gradient(circle at center,#2b2f77,#0d102b);
-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
-color:white;
+:root{
+  --bg1:#171a56;
+  --bg2:#242a7a;
+  --card:#2e3fb4;
+  --card-dark:#243292;
+  --yellow:#ffcf00;
+  --yellow-shadow:#c79d00;
+  --white:#ffffff;
+  --cyan:#7fe8ff;
+  --pink:#ff5fcf;
+  --shadow:0 10px 0 rgba(0,0,0,0.25);
 }
 
-.game-container{
-text-align:center;
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Arial,sans-serif;
+  color:var(--white);
+  background:
+    radial-gradient(circle at 20% 20%, #3444c9 0%, transparent 20%),
+    radial-gradient(circle at 80% 30%, #3b2aa8 0%, transparent 18%),
+    radial-gradient(circle at 50% 80%, #2f3eb6 0%, transparent 22%),
+    linear-gradient(180deg, var(--bg2), var(--bg1));
+}
+
+.screen{
+  width:min(1100px, 92vw);
+  margin:0 auto;
+  padding:24px 0 40px;
+}
+
+.top-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  margin-bottom:24px;
+}
+
+.profile-pill{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background:rgba(255,255,255,0.1);
+  padding:10px 16px;
+  border-radius:20px;
+  border:3px solid rgba(255,255,255,0.15);
+}
+
+.avatar{
+  width:54px;
+  height:54px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(180deg,#ffda45,#ff9f00);
+  color:#1b1b1b;
+  font-weight:700;
+  font-size:26px;
+  box-shadow:var(--shadow);
+}
+
+.player-name{
+  font-size:20px;
+  font-weight:700;
+}
+
+.player-rank{
+  font-size:14px;
+  opacity:0.9;
+}
+
+.currencies{
+  display:flex;
+  gap:12px;
+}
+
+.currency{
+  min-width:88px;
+  text-align:center;
+  padding:10px 14px;
+  border-radius:16px;
+  font-weight:700;
+  box-shadow:var(--shadow);
+}
+
+.coin{
+  background:linear-gradient(180deg,#ffd95a,#ffb300);
+  color:#1c1c1c;
+}
+
+.gem{
+  background:linear-gradient(180deg,#ff8be5,#ff4fc4);
+}
+
+.main-panel{
+  display:grid;
+  grid-template-columns:1.1fr 0.9fr;
+  gap:28px;
+  align-items:stretch;
+}
+
+.hero-card{
+  background:linear-gradient(180deg,var(--card),var(--card-dark));
+  border-radius:28px;
+  padding:32px;
+  box-shadow:var(--shadow);
+  border:4px solid rgba(255,255,255,0.12);
+}
+
+.badge{
+  display:inline-block;
+  background:linear-gradient(180deg,#ff7de2,#d53bb0);
+  padding:10px 16px;
+  border-radius:999px;
+  font-weight:700;
+  margin-bottom:18px;
+  box-shadow:var(--shadow);
 }
 
 .title{
-font-size:60px;
-letter-spacing:3px;
-margin-bottom:40px;
-text-shadow:0 0 20px #4fd3ff;
+  margin:0 0 12px;
+  font-size:72px;
+  line-height:0.95;
+  letter-spacing:2px;
+  text-shadow:0 0 18px rgba(127,232,255,0.8);
+}
+
+.subtitle{
+  margin:0 0 30px;
+  font-size:22px;
+  max-width:560px;
+  color:#e7eeff;
+}
+
+.xp-wrap{
+  margin-top:28px;
+}
+
+.xp-label{
+  display:flex;
+  justify-content:space-between;
+  font-size:15px;
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+.xp-bar{
+  width:100%;
+  height:24px;
+  background:rgba(255,255,255,0.18);
+  border-radius:999px;
+  overflow:hidden;
+  border:3px solid rgba(255,255,255,0.18);
+}
+
+.xp-fill{
+  width:84%;
+  height:100%;
+  background:linear-gradient(90deg,#71f0ff,#3bc6ff);
+  border-radius:999px;
 }
 
 .menu{
-display:flex;
-flex-direction:column;
-gap:20px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  justify-content:center;
 }
 
 .menu-button{
-font-size:24px;
-padding:20px 40px;
-border:none;
-border-radius:12px;
-background:#ffcc00;
-color:black;
-cursor:pointer;
-box-shadow:0 6px 0 #caa000;
-transition:transform .1s;
+  font-size:28px;
+  font-weight:700;
+  padding:24px 28px;
+  border:none;
+  border-radius:22px;
+  background:var(--yellow);
+  color:#171717;
+  cursor:pointer;
+  box-shadow:0 10px 0 var(--yellow-shadow);
+  transition:transform .12s ease, filter .12s ease;
 }
 
 .menu-button:hover{
-transform:scale(1.05);
+  transform:translateY(-2px) scale(1.02);
+  filter:brightness(1.03);
+}
+
+.menu-button.primary{
+  background:linear-gradient(180deg,#ffe15f,#ffcf00);
+}
+
+@media (max-width: 900px){
+  .main-panel{
+    grid-template-columns:1fr;
+  }
+
+  .title{
+    font-size:54px;
+  }
+
+  .subtitle{
+    font-size:18px;
+  }
+
+  .menu-button{
+    font-size:24px;
+  }
+
+  .top-bar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .currencies{
+    justify-content:flex-end;
+  }
 }
