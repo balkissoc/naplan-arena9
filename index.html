@@ -4,22 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NAPLAN Arena</title>
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <div class="screen">
     <header class="top-bar">
       <div class="profile-pill">
-        <div class="avatar">J</div>
+        <div class="avatar" id="player-avatar">J</div>
         <div class="profile-text">
-          <div class="player-name">Jamie</div>
-          <div class="player-rank">Rank 7 • Scholar</div>
+          <div class="player-name" id="player-name">Jamie</div>
+          <div class="player-rank" id="player-rank">Rank 7 • Scholar</div>
         </div>
       </div>
 
       <div class="currencies">
-        <div class="currency coin">1250</div>
-        <div class="currency gem">48</div>
+        <div class="currency coin" id="coin-count">1250</div>
+        <div class="currency gem" id="gem-count">48</div>
       </div>
     </header>
 
@@ -27,7 +27,9 @@
       <section class="hero-card">
         <div class="badge">YEAR 9</div>
         <h1 class="title">NAPLAN ARENA</h1>
-        <p class="subtitle">Battle through Reading, Numeracy and Language missions.</p>
+        <p class="subtitle">
+          Battle through Reading, Numeracy and Language missions.
+        </p>
 
         <div class="xp-wrap">
           <div class="xp-label">
@@ -42,16 +44,16 @@
 
       <section class="menu">
         <button class="menu-button primary" id="start-battle-btn">⚔ Start Battle</button>
-        <button class="menu-button">🏆 Leaderboard</button>
-        <button class="menu-button">🎒 Skills</button>
-        <button class="menu-button">🎯 Daily Quest</button>
+        <button class="menu-button" id="leaderboard-btn">🏆 Leaderboard</button>
+        <button class="menu-button" id="skills-btn">🎒 Skills</button>
+        <button class="menu-button" id="daily-quest-btn">🎯 Daily Quest</button>
       </section>
     </main>
 
-    <section class="battle-screen hidden" id="battle-screen">
+    <section class="battle-screen hidden" id="battle-screen" aria-live="polite">
       <div class="battle-card">
         <div class="battle-header">
-          <div class="battle-mode">READING BLITZ</div>
+          <div class="battle-mode" id="battle-mode">READING BLITZ</div>
           <div class="question-count" id="question-count">Question 1 of 3</div>
         </div>
 
@@ -65,6 +67,48 @@
           <div class="feedback" id="feedback"></div>
           <button class="menu-button next-button hidden" id="next-btn">Next</button>
           <button class="menu-button hidden" id="back-menu-btn">⬅ Back to Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="battle-screen hidden" id="results-screen" aria-live="polite">
+      <div class="battle-card">
+        <div class="battle-header">
+          <div class="battle-mode">BATTLE COMPLETE</div>
+          <div class="question-count" id="results-rank">Rank 7 • Scholar</div>
+        </div>
+
+        <h2 class="battle-question" id="results-title">
+          Great effort.
+        </h2>
+
+        <div class="answer-list">
+          <div class="profile-pill">
+            <div class="profile-text">
+              <div class="player-name">Score</div>
+              <div class="player-rank" id="results-score">0 / 3 correct</div>
+            </div>
+          </div>
+
+          <div class="profile-pill">
+            <div class="profile-text">
+              <div class="player-name">XP Earned</div>
+              <div class="player-rank" id="results-xp">+0 XP</div>
+            </div>
+          </div>
+
+          <div class="profile-pill">
+            <div class="profile-text">
+              <div class="player-name">Coins Earned</div>
+              <div class="player-rank" id="results-coins">+0 coins</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="battle-footer">
+          <div class="feedback correct" id="results-message">You are improving.</div>
+          <button class="menu-button next-button" id="play-again-btn">⚔ Play Again</button>
+          <button class="menu-button" id="results-menu-btn">⬅ Back to Menu</button>
         </div>
       </div>
     </section>
